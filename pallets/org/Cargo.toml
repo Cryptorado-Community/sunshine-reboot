@@ -1,0 +1,83 @@
+[package]
+name = "sunshine-org"
+version = "4.0.0-dev" # match substrate version 
+authors = ["Amar Singh <asinghchrony@protonmail.com>"]
+edition = "2021"
+
+license = "GPL-3.0"
+repository = "https://github.com/sunshine-protocol/sunshine-bounty"
+description = "sunshine organization registration and governance"
+keywords = ["sunshine", "substrate", "blockchain"]
+
+[dependencies]
+serde = { version = "1.0.131", optional = true }
+
+[dependencies.sunshine-bounty-utils]
+default-features = false
+path = '../../utils'
+version = '4.0.0-dev'
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'polkadot-v0.9.13'
+version = '4.0.0-dev'
+
+[dependencies.frame-support]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'polkadot-v0.9.13'
+version = '4.0.0-dev'
+
+[dependencies.frame-system]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'polkadot-v0.9.13'
+version = '4.0.0-dev'
+
+[dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'polkadot-v0.9.13'
+version = '4.0.0-dev'
+
+[dev-dependencies.sp-io]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'polkadot-v0.9.13'
+version = '4.0.0-dev'
+
+[dev-dependencies.sp-core]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'polkadot-v0.9.13'
+version = '4.0.0-dev'
+
+[dev-dependencies.pallet-balances]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'polkadot-v0.9.13'
+version = '4.0.0-dev'
+
+[dependencies.orml-utilities]
+git = 'https://github.com/open-web3-stack/open-runtime-module-library/'
+branch = 'polkadot-v0.9.13'
+version = '0.4.1-dev'
+
+[dependencies.codec]
+default-features = false
+features = ['derive']
+package = 'parity-scale-codec'
+version = '2.0.0'
+
+[features]
+default = ["std"]
+std = [
+	"serde/std",
+	"codec/std",
+	"sp-std/std",
+	"sp-runtime/std",
+	"frame-support/std",
+	"frame-system/std",
+	"orml-utilities/std",
+]

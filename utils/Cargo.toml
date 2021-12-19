@@ -1,0 +1,65 @@
+[package]
+name = "sunshine-bounty-utils"
+version = "4.0.0-dev"
+authors = ["Amar Singh <asinghchrony@protonmail.com>"]
+edition = "2021"
+
+license = "GPL-3.0"
+repository = "https://github.com/sunshine-protocol/sunshine-bounty"
+description = "objects and relationships for sunshine-bounty pallets"
+keywords = ["sunshine", "substrate", "voting"]
+
+[dependencies]
+derive-new = { version = "0.5.9", default-features = false }
+
+[dependencies.sp-std]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'polkadot-v0.9.13'
+version = '4.0.0-dev'
+
+[dev-dependencies.sp-runtime]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'polkadot-v0.9.13'
+version = '4.0.0-dev'
+
+[dependencies.frame-support]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'polkadot-v0.9.13'
+version = '4.0.0-dev'
+
+[dependencies.sp-core]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'polkadot-v0.9.13'
+version = '4.0.0-dev'
+
+[dev-dependencies.sp-io]
+default-features = false
+git = 'https://github.com/paritytech/substrate.git'
+branch = 'polkadot-v0.9.13'
+version = '4.0.0-dev'
+
+[dependencies.codec]
+default-features = false
+features = ['derive']
+package = 'parity-scale-codec'
+version = '2.0.0'
+
+[dependencies.orml-utilities]
+git = 'https://github.com/open-web3-stack/open-runtime-module-library/'
+branch = 'polkadot-v0.9.13'
+version = '0.4.1-dev'
+
+[features]
+default = ["std"]
+std = [
+    "codec/std",
+    "sp-runtime/std",
+    "frame-support/std",
+    "sp-core/std",
+    "sp-std/std",
+    "orml-utilities/std",
+]
