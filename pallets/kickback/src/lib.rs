@@ -3,13 +3,14 @@
 //!
 //! ## Overview
 //!
-//! To be admitted to enter an event, an event-specific deposit must be reserved from an account. 
-//! 
+//! To be admitted to enter an event, an event-specific deposit must be reserved from an account.
+//!
 //! ### Terminology
 //! - [`Organizer`] - the account that configures an event.
-//! - [`RsvpList`] - a [`BoundedVec`] of those who have reserved funds, that is limited to [`MaxAttendeeCount`] in size.
-//! - [`AttendanceOracle`] - the [origin](https://docs.substrate.io/build/origins/) that is solely allowed to determine who did and did not attend and event.
-//! 
+//! - [`RsvpList`] - a [`BoundedVec`] of those who have reserved funds, that is limited to
+//!   [`MaxAttendeeCount`] in size.
+//! - [`AttendanceOracle`] - the [origin](https://docs.substrate.io/build/origins/) that is solely
+//!   allowed to determine who did and did not attend and event.
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
@@ -32,9 +33,7 @@ use frame_support::{
 	},
 	ensure,
 	scale_info::TypeInfo,
-	traits::{
-		Currency, ReservableCurrency, EnsureOrigin
-	}
+	traits::{Currency, EnsureOrigin, ReservableCurrency},
 };
 
 pub use pallet::*;

@@ -271,7 +271,6 @@ parameter_types! {
 	pub const MaxAttendeeCount: u32 = 1000;
 }
 
-
 /// Configure the kickback pallet.
 impl pallet_kickback::Config for Runtime {
 	type Event = Event;
