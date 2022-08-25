@@ -23,8 +23,6 @@ use sp_std::prelude::*;
 use sp_version::NativeVersion;
 use sp_version::RuntimeVersion;
 
-use frame_system::{EnsureRoot, EnsureSigned};
-
 // A few exports that help ease life for downstream crates.
 pub use frame_support::{
 	construct_runtime, parameter_types,
@@ -267,16 +265,13 @@ impl pallet_sudo::Config for Runtime {
 	type Call = Call;
 }
 
-parameter_types! {
-	pub const MaxAttendeeCount: u32 = 1000;
-}
-
 /// Configure the kickback pallet.
 impl pallet_kickback::Config for Runtime {
 	type Event = Event;
 	type Currency = Balances;
-	type AttendanceOracle = EnsureRoot<AccountId>;
-	type MaxAttendeeCount = MaxAttendeeCount;
+	type MeetingId = u64;
+	type MaxMeetingCount = ConstU32<100>;
+	type MaxAttendeeCount = ConstU32<10000>;
 }
 
 // Create the runtime by composing the FRAME pallets that were previously configured.
