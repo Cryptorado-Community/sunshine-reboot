@@ -1,9 +1,16 @@
+//! # Kickback Pallet
+//! This pallet implements the [Kickback protocol](https://github.com/wearekickback) for event management via skin-in-the-game incentives.
+//!
+//! ## Overview
+//!
+//! To be admitted to enter an event, an event-specific deposit must be reserved from an account. 
+//! 
+//! ### Terminology
+//! - [`Organizer`] - the account that configures an event.
+//! - [`RsvpList`] - a [`BoundedVec`] of those who have reserved funds, that is limited to [`MaxAttendeeCount`] in size.
+//! - [`AttendanceOracle`] - the [origin](https://docs.substrate.io/build/origins/) that is solely allowed to determine who did and did not attend and event.
+//! 
 #![cfg_attr(not(feature = "std"), no_std)]
-
-/// Edit this file to define custom logic or remove it if it is not needed.
-/// Learn more about FRAME and the core library of Substrate FRAME pallets:
-/// <https://docs.substrate.io/reference/frame-pallets/>
-pub use pallet::*;
 
 #[cfg(test)]
 mod mock;
@@ -14,10 +21,25 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
+use frame_support::pallet_prelude::*;
+use frame_system::pallet_prelude::*;
+
+pub use pallet::*;
+
+/// The balance type of this pallet.
+pub type BalanceOf<T> =
+	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+
+type PositiveImbalanceOf<T> = <<T as Config>::Currency as Currency<
+	<T as frame_system::Config>::AccountId,
+>>::PositiveImbalance;
+type NegativeImbalanceOf<T> = <<T as Config>::Currency as Currency<
+	<T as frame_system::Config>::AccountId,
+>>::NegativeImbalance;
+
 #[frame_support::pallet]
 pub mod pallet {
-	use frame_support::pallet_prelude::*;
-	use frame_system::pallet_prelude::*;
+	use super::*;
 
 	#[pallet::pallet]
 	#[pallet::generate_store(pub(super) trait Store)]
@@ -26,9 +48,27 @@ pub mod pallet {
 	/// Configure the pallet by specifying the parameters and types on which it depends.
 	#[pallet::config]
 	pub trait Config: frame_system::Config {
-		/// Because this pallet emits events, it depends on the runtime's definition of an event.
+		/// The overarching event type.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+
+		/// The currency used for deposits.
+		type Currency: ReservableCurrency<Self::AccountId>;
+
+		/// The origin that can determine attendance of those on the RSVP list.
+		type AttendanceOracle: EnsureOrigin<Self::Origin>;
+
+		/// The maximum number of attendees per event.
+		#[pallet::constant]
+		type MaxAttendeeCount: Get<u32>;
 	}
+
+	// The pallet's runtime storage items.
+	// https://docs.substrate.io/main-docs/build/runtime-storage/
+	#[pallet::storage]
+	#[pallet::getter(fn something)]
+	// Learn more about declaring storage items:
+	// https://docs.substrate.io/main-docs/build/runtime-storage/#declaring-storage-items
+	pub type Something<T> = StorageValue<_, u32>;
 
 	// The pallet's runtime storage items.
 	// https://docs.substrate.io/main-docs/build/runtime-storage/
