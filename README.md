@@ -1,21 +1,6 @@
-# Substrate Node Template
+# Cryptorado Substrate DAO Node
 
-[![Try on playground](https://img.shields.io/badge/Playground-Node_Template-brightgreen?logo=Parity%20Substrate)](https://docs.substrate.io/playground/) [![Matrix](https://img.shields.io/matrix/substrate-technical:matrix.org)](https://matrix.to/#/#substrate-technical:matrix.org)
-
-A fresh FRAME-based [Substrate](https://www.substrate.io/) node, ready for hacking :rocket:
-
-## Getting Started
-
-Follow the steps below to get started with the Node Template, or get it up and running right from
-your browser in just a few clicks using
-the [Substrate Playground](https://docs.substrate.io/playground/) :hammer_and_wrench:
-
-### Using Nix
-
-Install [nix](https://nixos.org/) and optionally [direnv](https://github.com/direnv/direnv) and
-[lorri](https://github.com/nix-community/lorri) for a fully plug and play experience for setting up
-the development environment. To get all the correct dependencies activate direnv `direnv allow` and
-lorri `lorri shell`.
+A fresh FRAME-based [Substrate](https://www.substrate.io/) node, ready for hacking. Based on [the Substrate node template](https://github.com/substrate-developer-hub/substrate-node-template)
 
 ### Rust Setup
 
@@ -26,7 +11,7 @@ First, complete the [basic Rust setup instructions](./docs/rust-setup.md).
 Use Rust's native `cargo` command to build and launch the template node:
 
 ```sh
-cargo run --release -- --dev
+cargo r -r -- --dev
 ```
 
 ### Build
@@ -35,10 +20,10 @@ The `cargo run` command will perform an initial build. Use the following command
 without launching it:
 
 ```sh
-cargo build --release
+cargo b -r
 ```
 
-### Embedded Docs
+### Embedded CLI Docs
 
 Once the project has been built, the following command can be used to explore all parameters and
 subcommands:
@@ -46,12 +31,6 @@ subcommands:
 ```sh
 ./target/release/node-template -h
 ```
-
-## Run
-
-The provided `cargo run` command will launch a temporary node and its state will be discarded after
-you terminate the process. After the project has been built, there are other ways to launch the
-node.
 
 ### Single-Node Development Chain
 
@@ -77,6 +56,7 @@ RUST_BACKTRACE=1 ./target/release/node-template -ldebug --dev
 > running. Also, **alice** account will be authority and sudo account as declared in the
 > [genesis state](https://github.com/substrate-developer-hub/substrate-node-template/blob/main/node/src/chain_spec.rs#L49).
 > At the same time the following accounts will be pre-funded:
+>
 > - Alice
 > - Bob
 > - Alice//stash
@@ -102,7 +82,6 @@ dev
 $ ls ./my-chain-state/chains/dev
 db keystore network
 ```
-
 
 ### Connect with Polkadot-JS Apps Front-end
 
@@ -229,3 +208,7 @@ by appending your own. A few useful ones are as follow.
 # Check whether the code is compilable
 ./scripts/docker_run.sh cargo check
 ```
+
+## License
+
+This software is licensed under [GPL v3.0 with a classpath linking exception](LICENSE-GPL3).
