@@ -24,6 +24,19 @@ mod benchmarking;
 use frame_support::pallet_prelude::*;
 use frame_system::pallet_prelude::*;
 
+use frame_support::{
+	codec::{Decode, Encode, MaxEncodedLen},
+	dispatch::{
+		DispatchError, DispatchResult, DispatchResultWithPostInfo, Dispatchable, GetDispatchInfo,
+		PostDispatchInfo,
+	},
+	ensure,
+	scale_info::TypeInfo,
+	traits::{
+		Currency, ReservableCurrency, EnsureOrigin
+	}
+};
+
 pub use pallet::*;
 
 /// The balance type of this pallet.
@@ -61,14 +74,6 @@ pub mod pallet {
 		#[pallet::constant]
 		type MaxAttendeeCount: Get<u32>;
 	}
-
-	// The pallet's runtime storage items.
-	// https://docs.substrate.io/main-docs/build/runtime-storage/
-	#[pallet::storage]
-	#[pallet::getter(fn something)]
-	// Learn more about declaring storage items:
-	// https://docs.substrate.io/main-docs/build/runtime-storage/#declaring-storage-items
-	pub type Something<T> = StorageValue<_, u32>;
 
 	// The pallet's runtime storage items.
 	// https://docs.substrate.io/main-docs/build/runtime-storage/
