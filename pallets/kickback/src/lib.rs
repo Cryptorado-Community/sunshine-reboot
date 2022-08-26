@@ -10,8 +10,10 @@
 //! - [`MeetingDetails`]: Metadata of a specific meeting.
 //! - [`Meetings`]: a [`BoundedVec`] of meeting details that is limited to [`MaxMeetingCount`] in
 //!   size.
-//! - [`DepositorsOf`]: a [`BoundedVec`] of accounts that have deposited for a specific meeting that is
-//!   limited to [`MaxAttendeeCount`] in size.
+//! - [`DepositorsOf`]: a [`BoundedVec`] of accounts that have deposited for a specific meeting that
+//!   is limited to [`MaxAttendeeCount`] in size.
+//! - `Attest`: to attest to a specific attendee being present at an event.
+//! - `Settle`: to
 //!
 //! ## Considerations
 //!
@@ -19,12 +21,12 @@
 //! reasoned about in this pallet.
 //!
 //! All [`MeetingDetails`] include arbitrary meeting details that must be available on an [IPFS](https://ipfs.io) network and have a valid [`Cid`] to access them.
-//! This cannot be mutated once established for a meeting to ensure that all attendees have a common
-//! view of the meeting's information (time, location, requirements other than a deposit to be
-//! admitted, etc.). Most users will want this information to point to a static dApp
-//! that is integrated with this pallet and the network it's hosted on to RSVP for a specific
-//! meeting. This could also simply be linking to a JSON file that could be consumed in a dApp to
-//! interact with this pallet.
+//! The [`MeetingDetails`]  cannot be mutated once established for a meeting to ensure that all
+//! attendees have a common view of the meeting's information (deposit, time, location, additional
+//! requirements to a deposit to be admitted, etc.). Most users will want this information to point
+//! to a static dApp that is integrated with this pallet and the network it's hosted on to RSVP for
+//! a specific meeting. This could also simply be linking to a JSON file that could be consumed in a
+//! dApp to interact with this pallet.
 #![cfg_attr(not(feature = "std"), no_std)]
 
 #[cfg(test)]
@@ -83,32 +85,36 @@ pub mod pallet {
 		type MaxAttendeeCount: Get<u32>;
 	}
 
-	// TODO: is this a useful storage item for lookup? Or just use Meetings
-	// /// The current set of active meetings.
-	// #[pallet::storage]
-	// #[pallet::getter(fn active_meetings)]
-	// pub type ActiveMeetings<T: Config> =
-	// 	StorageValue<_, BoundedVec<T::MeetingId, T::MaxMeetingCount>, ValueQuery>;
-
+	/// The list of all unsettled meeting details.
 	#[pallet::storage]
 	#[pallet::getter(fn meetings)]
-	/// The list of all unsettled meeting details.
 	pub type Meetings<T: Config> = StorageMap<
 		_,
-		Blake2_128Concat,
+		Twox64Concat,
 		T::MeetingId,
 		MeetingDetails<BalanceOf<T>, T::AccountId>,
 		OptionQuery,
 	>;
 
+	/// The list of all those RSVPed to a meeting.
 	#[pallet::storage]
-	#[pallet::getter(fn depositors_of)]
-	/// All accounts that have deposited fund for a specific meeting.
-	pub type DepositorsOf<T: Config> = StorageMap<
+	#[pallet::getter(fn rsvped)]
+	pub type Rsvped<T: Config> = StorageMap<
 		_,
-		Blake2_128Concat,
+		Twox64Concat,
 		T::MeetingId,
-		BoundedVec<AttendeeDetails<T::AccountId>, T::MaxAttendeeCount>,
+		BoundedVec<T::AccountId, T::MaxAttendeeCount>,
+		ValueQuery,
+	>;
+
+	/// The list of all host confirmed attendees to a meeting.
+	#[pallet::storage]
+	#[pallet::getter(fn attended)]
+	pub type Attended<T: Config> = StorageMap<
+		_,
+		Twox64Concat,
+		T::MeetingId,
+		BoundedVec<T::AccountId, T::MaxAttendeeCount>,
 		ValueQuery,
 	>;
 
@@ -118,19 +124,23 @@ pub mod pallet {
 	#[pallet::generate_deposit(pub fn deposit_event)]
 	pub enum Event<T: Config> {
 		/// A deposit for a meeting has been reserved for and account. [who, meeting]
-		RsvpDeposit { meeting: T::MeetingId, who: T::AccountId, deposit: BalanceOf<T> },
-		}
+		DepositReceived { meeting: T::MeetingId, attendee: T::AccountId, deposit: BalanceOf<T> },
+	}
 
 	// Errors inform users that something went wrong.
 	#[pallet::error]
 	pub enum Error<T> {
 		/// The signing account has no permission to do the operation.
 		NoPermission,
+		/// The meeting doesn't exist.
+		MeetingNotFound,
+		/// The account balance is insufficient for the required deposit.
+		InsufficientFunds,
 		/// The signing account has already RSVPEd for this meeting.
 		AlreadyRsvped,
 		/// The meeting has reached capacity.
-		TooManyRsvped,
-		/// The given MeetingID is unknown.
+		CapacityReached,
+		/// The given MeetingId is unknown.
 		Unknown,
 	}
 
@@ -142,7 +152,10 @@ pub mod pallet {
 		/// Cancel a meeting, refunding all those that RSVPed. Origin of this call must be from the
 		/// `host`.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn create(origin: OriginFor<T>, details: MeetingDetails<T, T::AccountId>) -> DispatchResult {
+		pub fn create(
+			origin: OriginFor<T>,
+			details: MeetingDetails<BalanceOf<T>, T::AccountId>,
+		) -> DispatchResult {
 			// Check that the extrinsic was signed and get the signer.
 			// This function will return an error if the extrinsic is not signed.
 			// https://docs.substrate.io/main-docs/build/origins/
@@ -164,45 +177,16 @@ pub mod pallet {
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
 		pub fn refund(
 			origin: OriginFor<T>,
-			#[pallet::compact] id: T::MeetingId,
-			who: T::AccountId,
-		) -> DispatchResult {
-			Ok(())
-		}
-		/// Return the deposit (if any) of an asset account.
-		///
-		/// The origin must be Signed.
-		///
-		/// - `id`: The identifier of the asset for the account to be created.
-		/// - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
-		///
-		/// Emits `Refunded` event when successful.
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
-		pub fn rsvp(
-			origin: OriginFor<T>,
-			#[pallet::compact] id: T::MeetingId,
+			id: T::MeetingId,
 			who: T::AccountId,
 		) -> DispatchResult {
 			let who = ensure_signed(origin)?;
 
-			if let Some(meet) = <Meetings<T>>::get(id) {
-				let deposit = meet.deposit;
-				// deposited is a vec of AttendeeDetails
-				<DepositorsOf<T>>::try_mutate(&meet, |depositors| ->{
-					DispatchResult {
-							let pos = depositors.binary_search_by_key(&who, |&(a, b)| who).err().ok_or(Error::<T>::AlreadyRsvped)?;
-							attendees
-								.try_insert(pos, who.clone())
-								.map_err(|_| Error::<T>::TooManyRsvped)?;
-							Ok(())
-					})?;
-					
-					Self::deposit_event(Event::RsvpDeposit { meeting: id.into(), who: who.into(), deposit: deposit.into()});
-				}
-			}
+			// Update storage.
 
 			Ok(())
 		}
+
 		/// Cancel a meeting, refunding all those that RSVPed. Origin of this call must be from the
 		/// `host`.
 		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
@@ -213,14 +197,61 @@ pub mod pallet {
 
 			Ok(())
 		}
+
+		/// Return the deposit (if any) of an asset account.
+		///
+		/// The origin must be Signed.
+		///
+		/// - `id`: The identifier of the asset for the account to be created.
+		/// - `allow_burn`: If `true` then assets may be destroyed in order to complete the refund.
+		///
+		/// Emits `Refunded` event when successful.
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		pub fn rsvp(origin: OriginFor<T>, id: T::MeetingId) -> DispatchResult {
+			let attendee = ensure_signed(origin)?;
+			let meeting = <Meetings<T>>::get(id).ok_or(Error::<T>::MeetingNotFound)?;
+				let deposit = meeting.deposit;
+				Self::do_rsvp(&id, &attendee, deposit)?; //
+				Self::deposit_event(Event::DepositReceived { meeting: id, attendee: attendee, deposit: deposit });
+
+			Ok(())
+		}
 	}
 }
 
 impl<T: Config> Pallet<T> {
+	/// Reserve a specific meeting deposit for an attendee and add them to the RSVP list.
+	fn do_rsvp(id: &T::MeetingId, attendee: &T::AccountId, deposit: BalanceOf<T>) -> DispatchResult {
+		// TODO: consider new storage item for list of deposits, something like:
+		// <DepositOf<T>>::insert(&who, deposit);
+		<Rsvped<T>>::try_mutate(id, |rsvps| -> DispatchResult {
+			let pos = rsvps.binary_search(attendee).err().ok_or(Error::<T>::AlreadyRsvped)?;
 
-		/// Account deposits funds and is added to the Deposited list.
-		fn do_rsvp(who &T::AccountId, depositors: &BoundedVec<AttendeeDetails<T::AccountId>, T::MaxAttendeeCount>, deposit: &BalanceOf<T>){
-			T::Currency::reserve(&who, deposit)?;
+			rsvps
+				.try_insert(pos, attendee.clone())
+				.map_err(|_| Error::<T>::CapacityReached)?; // TODO capacity needs a check that it's less than BoundedVec max MaxAttendeeCount
+				
+			T::Currency::reserve(&attendee, deposit)
+				.map_err(|_| Error::<T>::InsufficientFunds)?;
 
-		}
+			Ok(())
+		})?;
+
+		Ok(())
+	}
+
+	// /// Remove a user from the alliance member set.
+	// fn remove_member(who: &T::AccountId, role: MemberRole) -> DispatchResult {
+	// 	<Members<T, I>>::try_mutate(role, |members| -> DispatchResult {
+	// 		let pos = members.binary_search(who).ok().ok_or(Error::<T, I>::NotMember)?;
+	// 		members.remove(pos);
+	// 		Ok(())
+	// 	})?;
+
+	// 	if matches!(role, MemberRole::Founder | MemberRole::Fellow) {
+	// 		let members = Self::votable_members_sorted();
+	// 		T::MembershipChanged::change_members_sorted(&[], &[who.clone()], &members[..]);
+	// 	}
+	// 	Ok(())
+	// }
 }

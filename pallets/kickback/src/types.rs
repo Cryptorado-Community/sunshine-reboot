@@ -26,19 +26,21 @@ use sp_std::{convert::TryInto, prelude::*};
 pub struct MeetingDetails<Balance, AccountId> {
 	/// the host account of the event.
 	pub host: AccountId,
-	/// The CID of meeting information and metadata.
+	/// The CID of meeting information, dApp interface, and/or and metadata.
 	pub cid: Cid,
 	/// The deposit required to attend the meeting.
 	pub deposit: Balance,
 	/// The maximum number of attendees for this event
-	pub capacity: Get<u32>,
+	pub capacity: u32,
 }
 
-/// The metadata around a meeting instance, requires a [`Cid`].
+/// The list of attendees and data related to them.
 #[derive(Clone, Encode, Decode, Eq, PartialEq, RuntimeDebug, MaxEncodedLen, TypeInfo)]
-pub struct AttendeeDetails<AccountId> {
-	/// the account of the attendee.
+pub struct RsvpOf<AccountId, Balance> {
+	/// The account of the attendee.
 	pub id: AccountId,
+	/// The deposit reserved byt this attendee for a meeting.
+	pub deposited: Balance,
 	/// Record indicating if the host of a meeting counted attested to this account's attendance.
 	pub attended: bool,
 }
